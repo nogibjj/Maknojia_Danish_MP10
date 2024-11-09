@@ -50,7 +50,12 @@ def test_query(spark, df):
     result = query(
         spark,
         df,
-        "SELECT TEAM, AVG(PROJ_FPTS) AS avg_proj_points FROM WRRankings GROUP BY TEAM ORDER BY avg_proj_points DESC",
+        """
+        SELECT TEAM, AVG(PROJ_FPTS) AS avg_proj_points 
+        FROM WRRankings 
+        GROUP BY TEAM 
+        ORDER BY avg_proj_points DESC
+        """,
         "WRRankings",
     )
     assert result is None  # query function calls .show() which returns None
