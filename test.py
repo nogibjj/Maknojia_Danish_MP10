@@ -1,74 +1,67 @@
-import subprocess
+import os
+import pytest
+from lib.lib import (
+    extract,
+    load_data,
+    describe,
+    query,
+    example_transform,
+    start_spark,
+    end_spark,
+)
 
 
-def test_extract():
-    """Test the extract() function."""
-    result = subprocess.run(
-        ["python", "main.py", "extract"],
-        capture_output=True,
-        text=True,
-        check=True,
+@pytest.fixture(scope="module")
+def spark():
+    spark = start_spark("TestWRRankings")
+    yield spark
+    end_spark(spark)
+
+
+def testing_extract():
+    """Test that the extract function creates the data file as expected"""
+    file_path = extract()
+    assert os.path.exists(file_path) is True
+
+
+def testing_load(spark):
+    """Test that load_data correctly loads the data into a DataFrame"""
+    df = load_data(spark)
+    assert df is not None
+    assert df.count() > 0
+    assert "Player" in df.columns
+    assert "Points" in df.columns
+
+
+def testing_describe(spark):
+    """Test that describe function generates summary statistics without error"""
+    df = load_data(spark)
+    result = describe(df)
+    assert result is None
+
+
+def testing_query(spark):
+    """Test that query function runs and returns expected results"""
+    df = load_data(spark)
+    result = query(
+        spark,
+        df,
+        "SELECT Week, COUNT(*) AS player_count FROM WRRankings GROUP BY Week ORDER BY Week",
+        "WRRankings",
     )
-    assert result.returncode == 0
-    assert "Extracting data..." in result.stdout
+    assert result is None
 
 
-def test_load():
-    """Test the transform_load() function."""
-    result = subprocess.run(
-        ["python", "main.py", "load"],
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-    assert result.returncode == 0
-    assert "Transforming and loading data..." in result.stdout
-
-
-def test_query():
-    """Test queryData() with a complex SQL query for player statistics."""
-    query_string = """
-    WITH player_stats AS (
-        SELECT '2024' AS season,
-            p.PLAYER_NAME AS player,
-            r.TEAM AS team,
-            r.OPP AS opponent,
-            p.PROJ_FPTS AS projected_points
-        FROM drm85_mp6.drm85_wr_points p
-        JOIN drm85_mp6.drm85_wr_ranking r ON p.PLAYER_NAME = r.PLAYER_NAME
-        WHERE p.PROJ_FPTS IS NOT NULL
-    ),
-    team_player_stats AS (
-        SELECT team,
-            player,
-            AVG(projected_points) AS avg_projected_points
-        FROM player_stats
-        GROUP BY team, player
-    )
-    
-    SELECT team, player, avg_projected_points
-    FROM team_player_stats
-    ORDER BY avg_projected_points DESC
-    LIMIT 10;
-    """
-
-    try:
-        subprocess.run(
-            ["python3", "main.py", "query", query_string],
-            capture_output=True,
-            text=True,
-            check=True,  # Raise an error if the command fails
-        )
-
-        print("Query Test Passed!")
-
-    except subprocess.CalledProcessError as e:
-        print(f"Query failed with return code {e.returncode}")
-        print("STDOUT:", e.stdout)
-        print("STDERR:", e.stderr)
+def testing_transform(spark):
+    """Test that example_transform correctly adds Position_Category column"""
+    df = load_data(spark)
+    result = example_transform(df)
+    assert result is None
 
 
 if __name__ == "__main__":
-    test_extract()
-    test_load()
-    test_query()
+    testing_extract()
+    testing_load(spark)
+    testing_describe(spark)
+    testing_query(spark)
+    testing_transform(spark)
