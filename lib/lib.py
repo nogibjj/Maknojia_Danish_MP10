@@ -3,10 +3,8 @@ library functions
 """
 
 import os
-import requests
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import when, col
-
 from pyspark.sql.types import (
     StructType,
     StructField,
@@ -40,22 +38,16 @@ def end_spark(spark):
 
 
 def extract(
-    url="https://raw.githubusercontent.com/danishmaknojia/data/refs/heads/main/WRRankingsWeek5Points.csv",
-    file_path="data/WRRankingsWeek5Points.csv",
-    directory="data",
+    file_path="/data/WRRankingsWeek5.csv",
 ):
-    """Extract a url to a file path"""
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-    with requests.get(url) as r:
-        with open(file_path, "wb") as f:
-            f.write(r.content)
+    """Verifies the existence of the data file"""
+    if not os.path.exists(file_path):
+        raise FileNotFoundError("Data file not found.")
     return file_path
 
 
-def load_data(spark, data="data/WRRankingsWeek5Points.csv", name="WRRankings"):
-    """load data"""
-    # Adjusted schema for the WR Rankings dataset
+def load_data(spark, data="/data/WRRankingsWeek5.csv", name="WRRankings"):
+    """Load data with defined schema"""
     schema = StructType(
         [
             StructField("Player", StringType(), True),
@@ -67,14 +59,12 @@ def load_data(spark, data="data/WRRankingsWeek5Points.csv", name="WRRankings"):
     )
 
     df = spark.read.option("header", "true").schema(schema).csv(data)
-
     log_output("load data", df.limit(10).toPandas().to_markdown())
-
     return df
 
 
 def query(spark, df, query, name):
-    """queries using spark sql"""
+    """Query using Spark SQL"""
     df = df.createOrReplaceTempView(name)
     log_output("query data", spark.sql(query).toPandas().to_markdown(), query)
     return spark.sql(query).show()
@@ -87,7 +77,7 @@ def describe(df):
 
 
 def example_transform(df):
-    """example transformation on WR Rankings dataset"""
+    """Example transformation on WR Rankings dataset"""
     conditions = [(col("Pos") == "WR") | (col("Pos") == "RB"), (col("Pos") == "TE")]
 
     categories = ["Wide Receiver/Running Back", "Tight End"]
@@ -100,5 +90,4 @@ def example_transform(df):
     )
 
     log_output("transform data", df.limit(10).toPandas().to_markdown())
-
     return df.show()
