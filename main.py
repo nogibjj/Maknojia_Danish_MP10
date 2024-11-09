@@ -8,6 +8,7 @@ from lib.lib import (
     end_spark,
 )
 
+
 def main():
     # extract data path
     data_path = extract()
@@ -33,6 +34,7 @@ def main():
     example_transform(df)
     # end spark session
     end_spark(spark)
+
 
 if __name__ == "__main__":
     main()
