@@ -2,7 +2,7 @@
 Main CLI or app entry point
 """
 
-from lib.lib import (
+from lib import (
     extract,
     load_data,
     describe,
@@ -26,7 +26,10 @@ def main():
     query(
         spark,
         df,
-        "SELECT Week, COUNT(*) AS player_count FROM WRRankings GROUP BY Week ORDER BY Week",
+        (
+            "SELECT Week, COUNT(*) AS player_count "
+            "FROM WRRankings GROUP BY Week ORDER BY Week"
+        ),
         "WRRankings",
     )
     # example transform

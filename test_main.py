@@ -1,6 +1,6 @@
 import os
 import pytest
-from lib.lib import (
+from lib import (
     extract,
     load_data,
     describe,
@@ -46,7 +46,10 @@ def testing_query(spark):
     result = query(
         spark,
         df,
-        "SELECT Week, COUNT(*) AS player_count FROM WRRankings GROUP BY Week ORDER BY Week",
+        (
+            "SELECT Week, COUNT(*) AS player_count "
+            "FROM WRRankings GROUP BY Week ORDER BY Week"
+        ),
         "WRRankings",
     )
     assert result is None
